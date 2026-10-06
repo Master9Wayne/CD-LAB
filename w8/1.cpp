@@ -81,6 +81,8 @@ void removeLeftFactoring(map<string, vector<string>>& grammar) {
 
             for (size_t i = 0; i < rhsList.size(); i++) {
                 for (size_t j = i + 1; j < rhsList.size(); j++) {
+                    if (rhsList[i] == "e" || rhsList[j] == "e") continue;
+
                     size_t k = 0;
                     while (k < rhsList[i].length() && k < rhsList[j].length() && rhsList[i][k] == rhsList[j][k]) {
                         k++;
@@ -90,7 +92,7 @@ void removeLeftFactoring(map<string, vector<string>>& grammar) {
                         vector<string> currentGroup;
                         
                         for (const string& s : rhsList) {
-                            if (s.find(prefix) == 0) {
+                            if (s.find(prefix) == 0 && s != "e") {
                                 currentGroup.push_back(s);
                             }
                         }
