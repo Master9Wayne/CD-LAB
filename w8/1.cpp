@@ -22,6 +22,21 @@ void removeLeftRecursion(map<string, vector<string>>& grammar) {
         vector<string> rhsList = pair.second;
         vector<string> alphas, betas;
 
+                // Indirect recursion: replace a leading earlier non-terminal Aj (already processed) by its productions
+        for (auto const& prev : newGrammar) {
+            if (!grammar.count(prev.first)) continue;           // skip generated A' symbols
+            vector<string> expanded;
+            for (const string& rhs : rhsList) {
+                if (rhs.compare(0, prev.first.length(), prev.first) != 0) { expanded.push_back(rhs); continue; }
+                for (string d : prev.second) {
+                    if (d == "e") d = "";                       // epsilon disappears from the front
+                    string r = d + rhs.substr(prev.first.length());
+                    expanded.push_back(r.empty() ? "e" : r);
+                }
+            }
+            rhsList = expanded;
+        }
+
         for (const string& rhs : rhsList) {
             if (rhs.length() >= nonTerminal.length() && rhs.substr(0, nonTerminal.length()) == nonTerminal) {
                 alphas.push_back(rhs.substr(nonTerminal.length()));
