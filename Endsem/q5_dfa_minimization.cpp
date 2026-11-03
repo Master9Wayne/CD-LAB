@@ -1,22 +1,76 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+
+// Function 1: Create partitions from group assignments
+// Maps: group ID -> states belonging to that group
+
+map<int, vector<int>> blocks(vector<int>& v, int n) {
+
+    map<int, vector<int>> m;
+
+    for (int i = 0; i < n; i++) {
+
+        if (v[i] >= 0) {
+            m[v[i]].push_back(i);
+        }
+    }
+
+    return m;
+}
+
+
+// Function 2: Convert a group of states into a string
+// Example: {0, 2, 3}
+
+string name(vector<int>& mem) {
+
+    string r = "{";
+
+    for (int x : mem) {
+        r += to_string(x) + ",";
+    }
+
+    r.back() = '}';
+
+    return r;
+}
+
+
+// Function 3: Display partitions
+
+void show(string t, map<int, vector<int>>& m) {
+
+    cout << t;
+
+    for (auto& p : m) {
+        cout << " " << name(p.second);
+    }
+
+    cout << '\n';
+}
+
+
 int main() {
 
     int n, k, s, f;
 
     // Step 1: Read DFA details
+
     cout << "No. of states (0..n-1) and alphabet size: ";
     cin >> n >> k;
 
     vector<char> sym(k);
 
     cout << "Symbols: ";
+
     for (char &c : sym)
         cin >> c;
 
+
     // Transition table
     // d[i][j] = next state from state i on symbol j
+
     vector<vector<int>> d(n, vector<int>(k));
 
     cout << "Transition table (row per state, column per symbol):\n";
@@ -27,25 +81,30 @@ int main() {
         }
     }
 
+
     // Read start state
+
     cout << "Start state: ";
     cin >> s;
 
+
     // Read final states
+
     cout << "No. of final states, then the states: ";
     cin >> f;
 
     vector<int> fin(n, 0);
 
     while (f--) {
+
         int x;
         cin >> x;
+
         fin[x] = 1;
     }
 
 
     // Step 2: Find reachable states using BFS
-    // Unreachable states will have group number -1.
 
     vector<int> g(n, -1);
     vector<int> seen(n, 0);
@@ -69,78 +128,34 @@ int main() {
         }
     }
 
-    // Initial partition:
+
+    // Step 3: Initial partition
     // Group 0 = Non-final states
     // Group 1 = Final states
 
     for (int i = 0; i < n; i++) {
+
         if (seen[i]) {
             g[i] = fin[i];
         }
     }
 
 
-    // Step 3: Function to create partitions
-    // map: group ID -> states belonging to that group
+    // Step 4: Create and display initial partitions
 
-    auto blocks = [&](const vector<int>& v) {
-
-        map<int, vector<int>> m;
-
-        for (int i = 0; i < n; i++) {
-
-            if (v[i] >= 0) {
-                m[v[i]].push_back(i);
-            }
-        }
-
-        return m;
-    };
-
-
-    // Step 4: Function to print a partition
-    // Example: {0,3}
-
-    auto name = [](const vector<int>& mem) {
-
-        string r = "{";
-
-        for (int x : mem) {
-            r += to_string(x) + ",";
-        }
-
-        r.back() = '}';
-
-        return r;
-    };
-
-
-    auto show = [&](const string& t,
-                    const map<int, vector<int>>& m) {
-
-        cout << t;
-
-        for (auto& [id, mem] : m) {
-            cout << " " << name(mem);
-        }
-
-        cout << '\n';
-    };
-
-
-    // Step 5: Initial partition
-    auto P = blocks(g);
+    map<int, vector<int>> P = blocks(g, n);
 
     cout << "\n";
+
     show("P0:", P);
 
 
-    // Step 6: Refine partitions until no further splitting occurs
+    // Step 5: Refine partitions until stable
 
     for (int round = 1; ; round++) {
 
-        // Signature of a state:
-        // [current group, group reached on symbol 1, ..., group reached on symbol k]
+        // Signature:
+        // Current group + destination groups for each symbol
 
         map<vector<int>, int> id;
 
@@ -155,34 +170,40 @@ int main() {
                 // Current group
                 sig.push_back(g[i]);
 
-                // Groups reached on each input symbol
+                // Destination groups
                 for (int c = 0; c < k; c++) {
                     sig.push_back(g[d[i][c]]);
                 }
 
-                // States with identical signatures belong to same new group
+                // Assign new group based on signature
                 ng[i] = id.emplace(sig, id.size()).first->second;
             }
         }
 
-        // If number of groups remains unchanged,
-        // no more splitting is possible.
+
+        // Check whether partition is stable
 
         bool stable = (id.size() == P.size());
 
-        // Update partitions
-        g = ng;
-        P = blocks(g);
 
-        // Display current partition
+        // Update partitions
+
+        g = ng;
+
+        P = blocks(g, n);
+
+
+        // Display new partition
+
         show("P" + to_string(round) + ":", P);
+
 
         if (stable)
             break;
     }
 
 
-    // Step 7: Print the minimised DFA
+    // Step 6: Print minimised DFA
 
     cout << "\nMinimised DFA (" << P.size() << " states)\n";
 
@@ -195,15 +216,20 @@ int main() {
     cout << '\n';
 
 
-    // Each partition represents one state in the minimised DFA.
+    // Each partition represents one state
 
-    for (auto& [id, mem] : P) {
+    for (auto& p : P) {
 
-        // First member represents the entire partition
+        int id = p.first;
+
+        vector<int> mem = p.second;
+
+        // First member represents the partition
         int r = mem[0];
 
-        // Mark start state with ->
-        // Mark final states with *
+
+        // Mark start state and final states
+
         string state = "";
 
         if (g[s] == id)
@@ -216,7 +242,9 @@ int main() {
 
         cout << setw(14) << state;
 
+
         // Print transitions between minimised states
+
         for (int c = 0; c < k; c++) {
 
             int next = d[r][c];
