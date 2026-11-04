@@ -130,27 +130,34 @@ int main() {
             st.pop_back();
 
             // Epsilon production: push nothing
-            if (body != "#") {
+    if (body != "#") {
 
-                istringstream ss(body);
+    vector<string> sy;
+    string t = "";
 
-                vector<string> sy;
-                string t;
+    for (char c : body) {
 
-                while (ss >> t) {
-                    sy.push_back(t);
-                }
-
-                // Push production symbols in reverse order
-                // so that the leftmost symbol is on top.
-                st.insert(
-                    st.end(),
-                    sy.rbegin(),
-                    sy.rend()
-                );
+        if (c == ' ') {
+            if (t != "") {
+                sy.push_back(t);
+                t = "";
             }
         }
+        else {
+            t += c;
+        }
     }
+
+    if (t != "")
+        sy.push_back(t);
+
+    reverse(sy.begin(), sy.end());
+
+    for (string x : sy)
+        st.push_back(x);
+}
+        }
+    }   
 
     return 0;
 }
